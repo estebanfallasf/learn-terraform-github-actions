@@ -43,6 +43,47 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
+      - name: Terraform Plan-Destroy
+        id: plan-destroy
+        if: github.event_name == 'pull_request' && contains(github.event.head_commit.message, 'destroy')
+        run: terraform plan -destroy -no-color -input=false
+        continue-on-error: true
+
+      - name: Update Destroy Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request' && contains(github.event.head_commit.message, 'destroy')
+        env:
+          PLAN: "terraform\n${{ steps.plan-destroy.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### WARNING Plan Destroy has been requested ☠️ \n
+            #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan Destroy</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Destroy Status
+        if: steps.plan-destroy.outcome == 'failure'
+        run: exit 1
+
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
