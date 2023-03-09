@@ -2,6 +2,13 @@
 # SPDX-License-Identifier: MPL-2.0
 
 terraform {
+  backend "s3" {
+    bucket         = "learn-tf-gh-actions"
+    key            = "terraform.tfstate"
+    region         = "us-west-2"
+    dynamodb_table = "terraform_state_lock"
+    encrypt        = "true"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
