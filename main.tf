@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: MPL-2.0
 
 terraform {
+  # Do not comment out backend until bucket and dynamodb have been provisioned
   backend "s3" {
-    bucket         = "learn-tf-gh-actions"
+    bucket         = "ejf-learn-tf-gh-actions"
     key            = "terraform.tfstate"
     region         = "us-west-2"
-    dynamodb_table = "terraform_state_lock"
+    dynamodb_table = "ejf-terraform-state-table"
     encrypt        = "true"
   }
   required_providers {
